@@ -1,0 +1,74 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma/client"
+}
+
+enum ServiceDomain {
+  AI
+  FULL_STACK
+  CLOUD
+}
+
+enum BookingStatus {
+  NEW
+  CONTACTED
+  IN_DISCUSSION
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum NotificationType {
+  WHATSAPP
+  EMAIL
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model BookingRequest {
+  id                 String        @id @default(cuid())
+  requestId          String        @unique
+  domain             ServiceDomain
+  name               String
+  email              String
+  phone              String?
+  company            String?
+  projectTitle       String?
+  projectDescription String        @db.Text
+  budget             String?
+  timeline           String?
+  status             BookingStatus @default(NEW)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  notifications Notification[]
+
+  @@index([email])
+  @@index([status])
+  @@index([domain])
+  @@map("booking_requests")
+}
+
+model Notification {
+  id               String             @id @default(cuid())
+  bookingRequestId String
+  bookingRequest   BookingRequest     @relation(fields: [bookingRequestId], references: [id], onDelete: Cascade)
+  type             NotificationType   @default(WHATSAPP)
+  status           NotificationStatus @default(PENDING)
+  errorMessage     String?            @db.Text
+  sentAt           DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@index([bookingRequestId])
+  @@index([status])
+  @@map("notifications")
+}
