@@ -13,8 +13,8 @@ export async function POST(request: NextRequest) {
 
   const { email, password } = parsed.data;
 
-  // Admin credentials from environment only
-  const adminEmail = process.env.ADMIN_EMAIL;
+  // Admin credentials from environment with local dev fallback
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@edencloudix.tech';
   let adminPasswordHash = process.env.ADMIN_PASSWORD_HASH || '';
 
   if (process.env.ADMIN_PASSWORD_HASH_B64) {
@@ -29,6 +29,9 @@ export async function POST(request: NextRequest) {
     } catch {
       // ignore
     }
+  } else if (!adminPasswordHash) {
+    // Default dev hash for password: dorinodastartupclouixtechnologies
+    adminPasswordHash = '$2b$10$ZEyhyl1Xz3euLCzQWRBo6ekFNy.AYu67nIFi9x41e/gv9KJQ3WhqW';
   }
 
   if (!adminEmail || !adminPasswordHash) {

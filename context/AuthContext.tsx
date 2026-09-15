@@ -20,7 +20,7 @@ interface AuthContextType {
   user: AuthUserProfile | null;
   loading: boolean;
   isFirebaseConfigured: boolean;
-  signInWithGoogle: () => Promise<AuthUserProfile | null>;
+  signInWithGoogle: (customEmail?: string, customName?: string) => Promise<AuthUserProfile | null>;
   logout: () => Promise<void>;
 }
 
@@ -91,11 +91,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const signInWithGoogle = async (): Promise<AuthUserProfile | null> => {
+  const signInWithGoogle = async (
+    customEmail?: string,
+    customName?: string
+  ): Promise<AuthUserProfile | null> => {
     setLoading(true);
 
-    // If Firebase is configured with API keys in .env, run standard Firebase Google Sign-In popup!
-    if (isFirebaseConfigured && auth && googleProvider) {
+    // If Firebase is configured with API keys in .env, and no manual override is provided, run standard Firebase Google Sign-In popup!
+    if (isFirebaseConfigured && auth && googleProvider && !customEmail) {
       try {
         const result = await signInWithPopup(auth, googleProvider);
         const fbUser = result.user;
@@ -127,28 +130,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Seamless instant fallback if user hasn't added their Firebase API keys yet
+    // Seamless fallback mode (or manual email sign-in for testing)
     try {
-      const demoEmail = 'dorin@gmail.com';
-      const demoName = 'Deran S';
-      const demoPhoto = 'https://lh3.googleusercontent.com/a/default-user=s96-c';
+      const emailToUse = customEmail?.trim() || 'dea@gmail.com';
+      const nameToUse =
+        customName?.trim() ||
+        (emailToUse.includes('@') ? emailToUse.split('@')[0] : 'Client User');
+      const photoToUse =
+        'https://lh3.googleusercontent.com/a/default-user=s96-c';
 
       const res = await fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: demoEmail,
-          name: demoName,
-          picture: demoPhoto,
+          email: emailToUse,
+          name: nameToUse,
+          picture: photoToUse,
         }),
       });
 
-      const data = await res.json();
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to authenticate session');
+      }
+
       const profile: AuthUserProfile = {
-        uid: 'client-' + demoEmail,
-        email: demoEmail,
-        displayName: demoName,
-        photoURL: demoPhoto,
+        uid: 'client-' + emailToUse,
+        email: emailToUse,
+        displayName: nameToUse,
+        photoURL: photoToUse,
       };
       setUser(profile);
       return profile;

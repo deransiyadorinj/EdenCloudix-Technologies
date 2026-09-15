@@ -32,6 +32,8 @@ export default function SignInModal({
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  const [customEmail, setCustomEmail] = useState('dea@gmail.com');
+
   // Load user's projects whenever user changes
   useEffect(() => {
     if (user?.email) {
@@ -58,13 +60,17 @@ export default function SignInModal({
     }
   };
 
-  const handleGoogleClick = async () => {
+  const handleGoogleClick = async (emailToUse?: string) => {
     setLoading(true);
     setError(null);
     try {
-      await signInWithGoogle();
+      if (isFirebaseConfigured) {
+        await signInWithGoogle();
+      } else {
+        await signInWithGoogle(emailToUse || customEmail || 'dea@gmail.com');
+      }
     } catch (err: any) {
-      setError(err?.message || 'Firebase Google sign-in error. Check your Firebase credentials.');
+      setError(err?.message || 'Authentication error. Please verify your credentials.');
     } finally {
       setLoading(false);
     }
@@ -241,17 +247,43 @@ export default function SignInModal({
               <h4 style={{ margin: '0 0 6px', fontSize: '1.25rem', color: '#fff', fontWeight: 700 }}>
                 Welcome to Client Portal
               </h4>
-              <p style={{ margin: '0 0 24px', fontSize: '0.875rem', color: '#94a3b8', lineHeight: 1.5 }}>
-                Use Firebase Authentication to securely sign in with Google and manage your project requests.
+              <p style={{ margin: '0 0 20px', fontSize: '0.875rem', color: '#94a3b8', lineHeight: 1.5 }}>
+                {isFirebaseConfigured
+                  ? 'Use Firebase Authentication to securely sign in with Google and manage your project requests.'
+                  : 'Instant Client Sign-In active. Access your submitted requests or test with any Google account.'}
               </p>
+
+              {!isFirebaseConfigured && (
+                <div
+                  style={{
+                    background: 'rgba(0, 210, 255, 0.08)',
+                    border: '1px solid rgba(0, 210, 255, 0.25)',
+                    borderRadius: '12px',
+                    padding: '12px 16px',
+                    marginBottom: '20px',
+                    textAlign: 'left',
+                    fontSize: '0.8125rem',
+                    color: '#93c5fd',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', color: '#00d2ff', marginBottom: '4px' }}>
+                    <span>⚡</span>
+                    <span>Local Development Auth Active</span>
+                  </div>
+                  <span>
+                    Firebase API keys not detected in <code>.env.local</code>. You can instantly sign in below with your project email (<strong>dea@gmail.com</strong>) or any email to preview submitted requests.
+                  </span>
+                </div>
+              )}
 
               {/* Continue with Google Button */}
               <button
-                onClick={handleGoogleClick}
+                onClick={() => handleGoogleClick(customEmail)}
                 disabled={loading}
                 style={{
                   width: '100%',
-                  maxWidth: '340px',
+                  maxWidth: '360px',
                   padding: '14px 20px',
                   background: '#ffffff',
                   color: '#1f2937',
@@ -284,8 +316,57 @@ export default function SignInModal({
                   <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
                   <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
                 </svg>
-                <span>{loading ? 'Connecting with Google...' : 'Continue with Google'}</span>
+                <span>
+                  {loading
+                    ? 'Connecting with Google...'
+                    : !isFirebaseConfigured
+                    ? `Continue as ${customEmail}`
+                    : 'Continue with Google'}
+                </span>
               </button>
+
+              {!isFirebaseConfigured && (
+                <div style={{ maxWidth: '360px', margin: '0 auto', textAlign: 'left' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '6px' }}>
+                    Or sign in with a different project email:
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="email"
+                      value={customEmail}
+                      onChange={(e) => setCustomEmail(e.target.value)}
+                      placeholder="e.g. your-email@gmail.com"
+                      style={{
+                        flex: 1,
+                        background: 'rgba(255, 255, 255, 0.06)',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        borderRadius: '10px',
+                        padding: '10px 12px',
+                        color: '#fff',
+                        fontSize: '0.8125rem',
+                        outline: 'none',
+                      }}
+                    />
+                    <button
+                      onClick={() => handleGoogleClick(customEmail)}
+                      disabled={loading || !customEmail}
+                      style={{
+                        background: 'linear-gradient(135deg, #00d2ff, #0084ff)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '10px',
+                        padding: '10px 16px',
+                        fontSize: '0.8125rem',
+                        fontWeight: 600,
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      Sign In
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             /* Logged-In User Dashboard */
@@ -513,13 +594,74 @@ export default function SignInModal({
                             {isCompleted ? 'COMPLETED 🎉' : p.status}
                           </span>
 
-                          
+                          {onTrackProject && (
+                            <button
+                              onClick={() => onTrackProject(p.requestId)}
+                              style={{
+                                background: 'rgba(0, 210, 255, 0.1)',
+                                border: '1px solid rgba(0, 210, 255, 0.3)',
+                                borderRadius: '8px',
+                                padding: '6px 12px',
+                                color: '#00d2ff',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Track &rarr;
+                            </button>
+                          )}
                         </div>
                       </div>
                     );
                   })}
                 </div>
               )}
+
+              {/* Portal Quick Links */}
+              <div
+                style={{
+                  marginTop: '20px',
+                  paddingTop: '16px',
+                  borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  fontSize: '0.8125rem',
+                }}
+              >
+                <a
+                  href="/admin"
+                  style={{
+                    color: '#a78bfa',
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontWeight: 600,
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+                  onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <line x1="9" y1="3" x2="9" y2="21" />
+                  </svg>
+                  Admin Control Panel &rarr;
+                </a>
+
+                <a
+                  href="#start-project"
+                  onClick={onClose}
+                  style={{
+                    color: '#00d2ff',
+                    textDecoration: 'none',
+                    fontWeight: 600,
+                  }}
+                >
+                  + New Request
+                </a>
+              </div>
             </div>
           )}
         </div>

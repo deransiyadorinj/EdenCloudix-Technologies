@@ -166,6 +166,19 @@ export default function Footer() {
             >
               Terms of Service
             </Link>
+            <Link
+              href="/admin"
+              style={{
+                fontSize: '0.8125rem',
+                color: 'var(--text-muted)',
+                textDecoration: 'none',
+                transition: 'color 0.2s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ecx-cyan)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+            >
+              Admin Portal
+            </Link>
           </div>
         </div>
       </div>
