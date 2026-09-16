@@ -7,7 +7,13 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged,
 } from 'firebase/auth';
-import { auth, googleProvider, isFirebaseConfigured } from '@/lib/firebase';
+import {
+  auth,
+  googleProvider,
+  isFirebaseConfigured,
+  getFirebaseAuth,
+  getGoogleProvider,
+} from '@/lib/firebase';
 
 export interface AuthUserProfile {
   uid: string;
@@ -40,8 +46,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // 1. If Firebase Auth is configured and initialized, listen to its auth state
-    if (isFirebaseConfigured && auth) {
-      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: User | null) => {
+    const firebaseAuth = auth || getFirebaseAuth();
+    if (isFirebaseConfigured && firebaseAuth) {
+      const unsubscribe = onAuthStateChanged(firebaseAuth, async (firebaseUser: User | null) => {
         if (firebaseUser) {
           const profile: AuthUserProfile = {
             uid: firebaseUser.uid,
@@ -74,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return () => unsubscribe();
     }
 
-    // 2. Fallback: check server session if Firebase keys are not yet configured in .env
+    // 2. Fallback: check server session if Firebase keys are not yet configured in local dev
     fetch('/api/auth/me')
       .then((res) => res.json())
       .then((data) => {
@@ -97,10 +104,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   ): Promise<AuthUserProfile | null> => {
     setLoading(true);
 
-    // If Firebase is configured with API keys in .env, and no manual override is provided, run standard Firebase Google Sign-In popup!
-    if (isFirebaseConfigured && auth && googleProvider && !customEmail) {
+    const firebaseAuth = auth || getFirebaseAuth();
+    const provider = googleProvider || getGoogleProvider();
+
+    // If Firebase is configured with API keys, run standard Firebase Google Sign-In popup!
+    if (isFirebaseConfigured && firebaseAuth && provider && !customEmail) {
       try {
-        const result = await signInWithPopup(auth, googleProvider);
+        const result = await signInWithPopup(firebaseAuth, provider);
         const fbUser = result.user;
         const profile: AuthUserProfile = {
           uid: fbUser.uid,
@@ -130,7 +140,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Seamless fallback mode (or manual email sign-in for testing)
+    // In production, fallback mode is not allowed when Firebase should be used
+    const isDev = process.env.NODE_ENV === 'development';
+    if (!isDev && !isFirebaseConfigured) {
+      setLoading(false);
+      throw new Error('Firebase Authentication is not configured for this production environment.');
+    }
+
+    // Seamless fallback mode for local development only
     try {
       const emailToUse = customEmail?.trim() || 'dea@gmail.com';
       const nameToUse =
@@ -168,9 +185,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    if (isFirebaseConfigured && auth) {
+    const firebaseAuth = auth || getFirebaseAuth();
+    if (isFirebaseConfigured && firebaseAuth) {
       try {
-        await firebaseSignOut(auth);
+        await firebaseSignOut(firebaseAuth);
       } catch {
         // ignore
       }

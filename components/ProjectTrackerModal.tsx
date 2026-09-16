@@ -1,7 +1,7 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { auth, googleProvider, isFirebaseConfigured } from '@/lib/firebase';
+import { auth, googleProvider, isFirebaseConfigured, getFirebaseAuth, getGoogleProvider } from '@/lib/firebase';
 import { signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/auth';
 
 interface ProjectData {
@@ -67,8 +67,9 @@ export default function ProjectTrackerModal({
 
   // Listen to Firebase auth state changes
   useEffect(() => {
-    if (!isFirebaseConfigured || !auth) return;
-    const unsub = onAuthStateChanged(auth, async (user) => {
+    const firebaseAuth = auth || getFirebaseAuth();
+    if (!isFirebaseConfigured || !firebaseAuth) return;
+    const unsub = onAuthStateChanged(firebaseAuth, async (user) => {
       setFirebaseUser(user);
       if (user) {
         const email = user.email || '';
@@ -147,14 +148,16 @@ export default function ProjectTrackerModal({
 
   // Real Firebase Google Sign-In
   const handleGoogleSignIn = async () => {
-    if (!isFirebaseConfigured || !auth || !googleProvider) {
+    const firebaseAuth = auth || getFirebaseAuth();
+    const provider = googleProvider || getGoogleProvider();
+    if (!isFirebaseConfigured || !firebaseAuth || !provider) {
       setError('Google Sign-In is not configured yet. Please try email lookup below.');
       return;
     }
     setLoadingProjects(true);
     setError(null);
     try {
-      const result = await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(firebaseAuth, provider);
       const user = result.user;
       const email = user.email || '';
       const name = user.displayName || email.split('@')[0];
@@ -184,8 +187,9 @@ export default function ProjectTrackerModal({
 
   // Sign out from Firebase
   const handleSignOut = async () => {
-    if (auth) {
-      await signOut(auth);
+    const firebaseAuth = auth || getFirebaseAuth();
+    if (firebaseAuth) {
+      await signOut(firebaseAuth);
       await fetch('/api/auth/google', { method: 'DELETE' });
     }
     setUserEmail('');

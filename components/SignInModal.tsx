@@ -26,6 +26,7 @@ export default function SignInModal({
   onTrackProject,
 }: SignInModalProps) {
   const { user, signInWithGoogle, logout, isFirebaseConfigured } = useAuth();
+  const isDev = process.env.NODE_ENV === 'development';
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [projects, setProjects] = useState<UserProject[]>([]);
@@ -66,11 +67,21 @@ export default function SignInModal({
     try {
       if (isFirebaseConfigured) {
         await signInWithGoogle();
-      } else {
+      } else if (isDev) {
         await signInWithGoogle(emailToUse || customEmail || 'dea@gmail.com');
+      } else {
+        await signInWithGoogle();
       }
     } catch (err: any) {
-      setError(err?.message || 'Authentication error. Please verify your credentials.');
+      if (err?.code === 'auth/popup-closed-by-user') {
+        setError('Sign-in popup was closed before completing. Please try again.');
+      } else if (err?.code === 'auth/popup-blocked') {
+        setError('Sign-in popup was blocked by browser. Please allow popups for this site.');
+      } else if (err?.code === 'auth/unauthorized-domain') {
+        setError('Domain not authorized in Firebase Console. Please add this domain to Authorized Domains.');
+      } else {
+        setError(err?.message || 'Authentication error. Please verify your credentials.');
+      }
     } finally {
       setLoading(false);
     }
@@ -248,12 +259,13 @@ export default function SignInModal({
                 Welcome to Client Portal
               </h4>
               <p style={{ margin: '0 0 20px', fontSize: '0.875rem', color: '#94a3b8', lineHeight: 1.5 }}>
-                {isFirebaseConfigured
+                {isFirebaseConfigured || !isDev
                   ? 'Use Firebase Authentication to securely sign in with Google and manage your project requests.'
                   : 'Instant Client Sign-In active. Access your submitted requests or test with any Google account.'}
               </p>
 
-              {!isFirebaseConfigured && (
+              {/* Local development auth notice: ONLY rendered in local development when Firebase is not configured */}
+              {isDev && !isFirebaseConfigured && (
                 <div
                   style={{
                     background: 'rgba(0, 210, 255, 0.08)',
@@ -279,7 +291,7 @@ export default function SignInModal({
 
               {/* Continue with Google Button */}
               <button
-                onClick={() => handleGoogleClick(customEmail)}
+                onClick={() => handleGoogleClick()}
                 disabled={loading}
                 style={{
                   width: '100%',
@@ -319,13 +331,14 @@ export default function SignInModal({
                 <span>
                   {loading
                     ? 'Connecting with Google...'
-                    : !isFirebaseConfigured
+                    : isDev && !isFirebaseConfigured
                     ? `Continue as ${customEmail}`
                     : 'Continue with Google'}
                 </span>
               </button>
 
-              {!isFirebaseConfigured && (
+              {/* Local development project email input: ONLY rendered in local development when Firebase is not configured */}
+              {isDev && !isFirebaseConfigured && (
                 <div style={{ maxWidth: '360px', margin: '0 auto', textAlign: 'left' }}>
                   <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '6px' }}>
                     Or sign in with a different project email:
