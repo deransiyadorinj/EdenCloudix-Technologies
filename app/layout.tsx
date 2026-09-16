@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import Providers from '@/components/Providers';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -132,7 +133,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }
