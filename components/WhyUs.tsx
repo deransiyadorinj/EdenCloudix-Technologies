@@ -31,8 +31,8 @@ export default function WhyUs() {
       ),
     },
     {
-      title: 'Enterprise Security & Zero-Trust',
-      desc: 'Security is engineered into every architectural layer — from JWT authentication and TLS encryption to zero-trust cloud VPCs and sanitized DB queries.',
+      title: 'Enterprise Security & 100% Trust',
+      desc: 'Security is engineered into every architectural layer — from JWT authentication and TLS encryption to 100% trust cloud VPCs and sanitized DB queries.',
       accent: '#0072ff',
       bg: 'rgba(0, 114, 255, 0.1)',
       border: 'rgba(0, 114, 255, 0.25)',

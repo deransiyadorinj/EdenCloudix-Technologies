@@ -9,10 +9,12 @@ import Portfolio from '@/components/Portfolio';
 import StartProject from '@/components/StartProject';
 import Contact from '@/components/Contact';
 import Footer from '@/components/Footer';
+import IntroScreen from '@/components/IntroScreen';
 
 export default function Home() {
   return (
     <>
+      <IntroScreen />
       <Navigation />
       <main>
         <Hero />

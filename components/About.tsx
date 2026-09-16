@@ -71,7 +71,7 @@ const principles = [
   {
     num: '02',
     name: 'Enterprise Security',
-    tag: 'Zero-Trust Architecture',
+    tag: '100% Trust Architecture',
     desc: 'Security is engineered into every level: encrypted transmission, strict role-based access control (RBAC), sanitized queries, and hardened VPC networks.',
     color: '#ff2a85',
     icon: (

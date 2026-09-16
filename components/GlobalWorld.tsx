@@ -139,7 +139,7 @@ const stats: GlobalStatItem[] = [
   },
   {
     id: 's10',
-    num: 'Zero-Trust',
+    num: '100% Trust',
     label: 'Security Model',
     shortExplain: 'Encrypted payloads, granular role-based permissions, sanitized SQL queries, and secure session management.',
     accent: '#0072ff',
