@@ -14,6 +14,14 @@ export const bookingSchema = z.object({
 
 export type BookingInput = z.infer<typeof bookingSchema>;
 
+export const quickMessageSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name too long'),
+  email: z.string().email('Please enter a valid email address'),
+  message: z.string().min(5, 'Message must be at least 5 characters').max(5000, 'Message too long'),
+});
+
+export type QuickMessageInput = z.infer<typeof quickMessageSchema>;
+
 export const adminLoginSchema = z.object({
   email: z.string().email('Invalid email'),
   password: z.string().min(1, 'Password is required'),

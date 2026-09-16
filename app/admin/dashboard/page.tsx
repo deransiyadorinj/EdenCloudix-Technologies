@@ -700,19 +700,25 @@ export default function AdminDashboardPage() {
                               fontSize: '0.6875rem',
                               fontWeight: 700,
                               background:
-                                booking.domain === 'AI'
+                                booking.projectTitle === 'Quick Message'
+                                  ? 'rgba(255, 42, 133, 0.15)'
+                                  : booking.domain === 'AI'
                                   ? 'rgba(30, 138, 240, 0.15)'
                                   : booking.domain === 'FULL_STACK'
                                   ? 'rgba(168, 85, 247, 0.15)'
                                   : 'rgba(42, 184, 255, 0.15)',
                               color:
-                                booking.domain === 'AI'
+                                booking.projectTitle === 'Quick Message'
+                                  ? '#ff609f'
+                                  : booking.domain === 'AI'
                                   ? '#60a5fa'
                                   : booking.domain === 'FULL_STACK'
                                   ? '#c084fc'
                                   : '#2ab8ff',
                               border: `1px solid ${
-                                booking.domain === 'AI'
+                                booking.projectTitle === 'Quick Message'
+                                  ? 'rgba(255, 42, 133, 0.35)'
+                                  : booking.domain === 'AI'
                                   ? 'rgba(96, 165, 250, 0.35)'
                                   : booking.domain === 'FULL_STACK'
                                   ? 'rgba(192, 132, 252, 0.35)'
@@ -720,7 +726,13 @@ export default function AdminDashboardPage() {
                               }`,
                             }}
                           >
-                            {booking.domain === 'AI' ? 'AI Solutions' : booking.domain === 'FULL_STACK' ? 'Full-Stack' : 'Cloud Solutions'}
+                            {booking.projectTitle === 'Quick Message'
+                              ? 'Quick Message'
+                              : booking.domain === 'AI'
+                              ? 'AI Solutions'
+                              : booking.domain === 'FULL_STACK'
+                              ? 'Full-Stack'
+                              : 'Cloud Solutions'}
                           </span>
                         </td>
 
@@ -916,7 +928,7 @@ export default function AdminDashboardPage() {
                       border: '1px solid rgba(255, 79, 123, 0.3)',
                     }}
                   >
-                    {selectedBooking.domain}
+                    {selectedBooking.projectTitle === 'Quick Message' ? 'Quick Message' : selectedBooking.domain}
                   </span>
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>

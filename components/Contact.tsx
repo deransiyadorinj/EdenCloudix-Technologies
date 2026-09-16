@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 
@@ -10,6 +10,55 @@ const scrollTo = (id: string) => {
 export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [requestId, setRequestId] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim() || form.name.trim().length < 2) {
+      setError('Please enter your name (at least 2 characters).');
+      return;
+    }
+    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    if (!form.message.trim() || form.message.trim().length < 5) {
+      setError('Please enter a message (at least 5 characters).');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          email: form.email.trim(),
+          message: form.message.trim(),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to send message. Please try again.');
+        return;
+      }
+
+      setRequestId(data.requestId || '');
+      setSent(true);
+      setForm({ name: '', email: '', message: '' });
+    } catch {
+      setError('Network connection error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <section className="contact-section" id="contact" aria-label="Contact EdenCloudix">
@@ -88,25 +137,93 @@ export default function Contact() {
               <div style={{ textAlign: 'center', padding: '32px 20px' }}>
                 <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>✅</div>
                 <h4 style={{ color: '#fff', fontFamily: 'var(--font-primary)', fontWeight: 700, marginBottom: 8 }}>Message Received!</h4>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>We'll get back to you as soon as possible.</p>
-                <button className="btn btn-ghost" style={{ marginTop: 16 }} onClick={() => setSent(false)}>Send Another</button>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                  Thank you! Your message has been saved. We&apos;ll get back to you as soon as possible.
+                </p>
+                {requestId && (
+                  <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#60a5fa', marginTop: 10 }}>
+                    Tracking ID: {requestId}
+                  </p>
+                )}
+                <button
+                  className="btn btn-ghost"
+                  style={{ marginTop: 16 }}
+                  onClick={() => {
+                    setSent(false);
+                    setError('');
+                    setRequestId('');
+                  }}
+                >
+                  Send Another
+                </button>
               </div>
             ) : (
-              <form style={{ display: 'flex', flexDirection: 'column', gap: 16 }} onSubmit={e => { e.preventDefault(); setSent(true); }}>
+              <form style={{ display: 'flex', flexDirection: 'column', gap: 16 }} onSubmit={handleSubmit}>
                 <div className="form-group">
                   <label className="form-label" htmlFor="contact-name">Your Name</label>
-                  <input id="contact-name" className="form-input" placeholder="Your name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
+                  <input
+                    id="contact-name"
+                    className="form-input"
+                    placeholder="Your name"
+                    value={form.name}
+                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                    disabled={loading}
+                    required
+                  />
                 </div>
                 <div className="form-group">
                   <label className="form-label" htmlFor="contact-email">Email Address</label>
-                  <input id="contact-email" type="email" className="form-input" placeholder="you@example.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} required />
+                  <input
+                    id="contact-email"
+                    type="email"
+                    className="form-input"
+                    placeholder="you@example.com"
+                    value={form.email}
+                    onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                    disabled={loading}
+                    required
+                  />
                 </div>
                 <div className="form-group">
                   <label className="form-label" htmlFor="contact-message">Message</label>
-                  <textarea id="contact-message" className="form-input form-textarea" rows={4} placeholder="Tell us about your project or ask us anything..." value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} required />
+                  <textarea
+                    id="contact-message"
+                    className="form-input form-textarea"
+                    rows={4}
+                    placeholder="Tell us about your project or ask us anything..."
+                    value={form.message}
+                    onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
+                    disabled={loading}
+                    required
+                  />
                 </div>
-                <button type="submit" className="btn btn-primary btn-lg" style={{ justifyContent: 'center' }}>
-                  Send Message →
+
+                {error && (
+                  <div
+                    style={{
+                      padding: '10px 14px',
+                      background: 'rgba(255, 42, 133, 0.12)',
+                      border: '1px solid rgba(255, 42, 133, 0.3)',
+                      borderRadius: 'var(--radius-sm)',
+                      color: '#ff609f',
+                      fontSize: '0.8125rem',
+                    }}
+                  >
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="btn btn-primary btn-lg"
+                  style={{
+                    justifyContent: 'center',
+                    opacity: loading ? 0.75 : 1,
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {loading ? 'Sending Message...' : 'Send Message →'}
                 </button>
               </form>
             )}
